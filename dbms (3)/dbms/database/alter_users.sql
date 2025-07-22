@@ -1,0 +1,8 @@
+ALTER TABLE users
+ADD COLUMN display_name VARCHAR(100);
+
+ALTER TABLE users
+ADD COLUMN profile_image VARCHAR(255);
+
+ALTER TABLE users
+ADD COLUMN theme VARCHAR(20) DEFAULT 'light';

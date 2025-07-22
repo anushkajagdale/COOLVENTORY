@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="/refFE/script.js"></script>
+    <script src="/refFE/nav-auth.js"></script>
+    <style>
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode .container {
+            background-color: #2d2d2d;
+        }
+
+        .dark-mode .menu {
+            background-color: #333;
+        }
+
+        .dark-mode .menu a {
+            color: #fff;
+        }
+
+        .dark-mode table {
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+
+        .dark-mode th {
+            background-color: #444;
+        }
+
+        .dark-mode td {
+            border-color: #444;
+        }
+
+        .dark-mode select,
+        .dark-mode input {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+        }
+
+        .dark-mode .profile-card,
+        .dark-mode .form {
+            background-color: #2d2d2d;
+        }
+
+        .dark-mode .expiring-soon {
+            background-color: #463e3e;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                loadProducts();
+                updateLoginButton();
+            }
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            // Initialize category dropdown if product is already selected
+            const productSelect = document.getElementById('name');
+            if (productSelect.value) {
+                updateCategory();
+            }
+        });
+
+        // Add goToLogin function
+        function goToLogin() {
+            if (localStorage.getItem('authToken')) {
+                // If logged in, log out
+                localStorage.removeItem('authToken');
+                location.reload();
+            } else {
+                // If not logged in, store current page and redirect
+                localStorage.setItem('returnTo', 'manageprod.html');
+                window.location.href = 'login.html';
+            }
+        }
+
+        function updateLoginButton() {
+            const loginBtn = document.querySelector('nav a[onclick="goToLogin()"]');
+            if (localStorage.getItem('authToken')) {
+                loginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            } else {
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            }
+        }
+
+        // Update loadProducts to handle unauthorized state
+        async function loadProducts() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    document.getElementById('productForm').style.display = 'none';
+                    document.getElementById('productList').innerHTML = '<p>Please log in to manage products</p>';
+                    return;
+                }
+
+                const response = await fetch('/api/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch products');
+                }
+
+                const data = await response.json();
+                const tbody = document.getElementById('productTableBody');
+
+                if (data.success && data.products && data.products.length > 0) {
+                    console.log(`Found ${data.products.length} products for current user`);
+
+                    tbody.innerHTML = data.products.map(p => {
+                        const expiryDate = new Date(p.expiry);
+                        const today = new Date();
+                        const daysToExpiry = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
+                        const expiryClass = daysToExpiry <= 7 && daysToExpiry >= 0 ? 'expiring-soon' : '';
+
+                        return `
+                            <tr class="${expiryClass}" data-id="${p.product_id}">
+                                <td>${p.barcode}</td>
+                                <td>${p.name}</td>
+                                <td>${p.category}</td>
+                                <td><strong>${p.quantity}</strong> ${p.unit}</td>
+                                <td>${p.unit}</td>
+                                <td>${new Date(p.expiry).toLocaleDateString()}</td>
+                                <td>
+                                    <button onclick="checkExpiry('${p.product_id}')" class="btn-check">
+                                        <i class="fas fa-clock"></i> Check Expiry
+                                    </button>
+                                    <button onclick="sellProduct('${p.product_id}')" class="btn-sell">
+                                        <i class="fas fa-shopping-cart"></i> Sell
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                showMessage('Failed to load products', 'error');
+            }
+        }
+
+        // Add this function to handle login success
+        function handleLoginSuccess(data) {
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('userId', data.user.userId);
+
+            if (data.user.existingProducts && data.user.existingProducts.length > 0) {
+                const tbody = document.getElementById('productTableBody');
+                tbody.innerHTML = data.user.existingProducts.map(p => {
+                    const expiryClass = p.isExpiringSoon ? 'expiring-soon' : '';
+
+                    return `
+                        <tr class="${expiryClass}" data-id="${p.product_id}">
+                            <td>${p.barcode}</td>
+                            <td>${p.name}</td>
+                            <td>${p.category}</td>
+                            <td>${p.quantity}</td>
+                            <td>${p.unit}</td>
+                            <td>${new Date(p.expiry).toLocaleDateString()}</td>
+                            <td>
+                                <button onclick="checkExpiry('${p.product_id}')" class="btn-check">
+                                    <i class="fas fa-clock"></i> Check Expiry
+                                </button>
+                                <button onclick="sellProduct('${p.product_id}')" class="btn-sell">
+                                    <i class="fas fa-shopping-cart"></i> Sell
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            showMessage('Welcome back! Your data has been loaded.', 'success');
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = type;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        async function addProduct(e) {
+            e.preventDefault();
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showMessage('Please login first', 'error');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const formData = {
+                    name: document.getElementById('name').value,
+                    barcode: document.getElementById('barcode').value,
+                    category: document.getElementById('category').value,
+                    quantity: parseInt(document.getElementById('quantity').value),
+                    unit: document.getElementById('unit').value,
+                    expiry: document.getElementById('expiry').value
+                };
+
+                // Validate data
+                if (!formData.name || !formData.barcode || !formData.category ||
+                    !formData.quantity || !formData.unit || !formData.expiry) {
+                    showMessage('Please fill all required fields', 'error');
+                    return;
+                }
+
+                console.log('Sending product data:', formData); // Debug logging
+
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Server response:', data); // Debug logging
+
+                if (data.success) {
+                    showMessage('Product added successfully', 'success');
+                    document.getElementById('productForm').reset();
+                    await loadProducts(); // Refresh product list
+                } else {
+                    throw new Error(data.message || 'Failed to add product');
+                }
+            } catch (error) {
+                console.error('Error adding product:', error);
+                showMessage(error.message || 'Failed to add product', 'error');
+            }
+        }
+
+        function checkExpiry(productId) {
+            try {
+                const row = document.querySelector(`tr[data-id="${productId}"]`);
+                if (!row) {
+                    console.error('Row not found for product:', productId);
+                    return;
+                }
+
+                const barcode = row.querySelector('td:nth-child(1)').textContent;
+                const name = row.querySelector('td:nth-child(2)').textContent;
+                const expiryDate = new Date(row.querySelector('td:nth-child(6)').textContent);
+                const today = new Date();
+                const daysToExpiry = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+                let message = `Product Details:\n`;
+                message += `Name: ${name}\n`;
+                message += `Barcode: ${barcode}\n`;
+                message += `Status: `;
+
+                if (daysToExpiry < 0) {
+                    message += `Product has expired ${Math.abs(daysToExpiry)} days ago!`;
+                } else if (daysToExpiry < 7) {
+                    message += `WARNING: Product expires in ${daysToExpiry} days!`;
+                } else {
+                    message += `Product expires in ${daysToExpiry} days`;
+                }
+
+                alert(message);
+            } catch (error) {
+                console.error('Error checking expiry:', error);
+                alert('Error checking expiry date');
+            }
+        }
+
+        async function sellProduct(productId) {
+            try {
+                const row = document.querySelector(`tr[data-id="${productId}"]`);
+                if (!row) {
+                    throw new Error('Product not found');
+                }
+
+                const currentQuantity = parseInt(row.querySelector('td:nth-child(4)').textContent);
+                let sellQuantity = parseInt(prompt(`Enter quantity to sell (available: ${currentQuantity}):`, "1"));
+
+                if (isNaN(sellQuantity) || sellQuantity <= 0) {
+                    showMessage('Please enter a valid quantity', 'error');
+                    return;
+                }
+
+                if (sellQuantity > currentQuantity) {
+                    showMessage('Cannot sell more than available quantity', 'error');
+                    return;
+                }
+
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/products/sell', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        productId,
+                        quantity: sellQuantity
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (data.removed) {
+                        row.remove(); // Remove the row if quantity is 0
+                        showMessage('Product sold and removed from inventory', 'success');
+                    } else {
+                        row.querySelector('td:nth-child(4)').textContent = data.remainingQuantity;
+                        showMessage('Product sold successfully', 'success');
+                    }
+                    await loadProducts(); // Refresh the product list
+                } else {
+                    throw new Error(data.message || 'Failed to sell product');
+                }
+            } catch (error) {
+                console.error('Error selling product:', error);
+                showMessage(error.message || 'Failed to sell product', 'error');
+            }
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        document.getElementById('productForm').onsubmit = addProduct;
+
+        function updateCategory() {
+            const productSelect = document.getElementById('name');
+            const categorySelect = document.getElementById('category');
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const category = selectedOption.getAttribute('data-category');
+
+            if (category) {
+                categorySelect.value = category;
+            }
+        }
+
+        document.getElementById('name').addEventListener('change', function () {
+            updateCategory();
+        });
+
+        document.getElementById('productForm').addEventListener('reset', () => {
+            setTimeout(() => {
+                document.getElementById('category').value = '';
+            }, 0);
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Success message at the top -->
+    <div id="add-success-msg"
+        style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:#fff; font-size:20px; font-weight:bold; padding:16px 32px; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:2000; text-align:center;">
+        Product added successfully!
+    </div>
+    <div class="container">
+        <!-- Header -->
+        <header style="background: black;">
+            <img src="coolventory.png" alt="Coolventory Logo" class="logo">
+            <h1>Manage Products</h1>
+        </header>
+
+        <!-- Top Menu -->
+        <nav class="menu">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="manageprod.html"><i class="fas fa-box"></i> Manage Products</a>
+            <a href="expiryalerts.html"><i class="fas fa-exclamation-triangle"></i> Expiry Alerts</a>
+            <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            <a href="sales.html"><i class="fas fa-chart-bar"></i> Sales</a>
+            <a href="#" onclick="goToLogin(); return false;"><i class="fas fa-sign-in-alt"></i> Login</a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Product Management Section -->
+            <section id="products" class="section">
+                <h2>Add New Product</h2>
+                <div id="message" style="display: none;"></div>
+                <form id="productForm" onsubmit="addProduct(event)" class="form"
+                    style="flex-direction: column; gap: 15px; max-width: 600px; margin: 0 auto;">
+                    <!-- Barcode Number input (required, before product name) -->
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="barcode" placeholder="Barcode Number (required)" required
+                            style="padding: 10px; font-size: 16px; flex: 2;">
+                        <button id="scan-barcode-btn" type="button"
+                            style="padding: 10px; font-size: 16px; background-color: #ffc107; color: black; border: none; border-radius: 5px; cursor: pointer; flex: 1%;">
+                            <i class="fas fa-barcode"></i> Scan Barcode
+                        </button>
+                    </div>
+                    <!-- Replace input with select for product name -->
+                    <select id="name" required style="padding: 10px; font-size: 16px;" onchange="updateCategory()">
+                        <option value="">Select Product Name</option>
+                        <!-- Dairy Products -->
+                        <option value="Fresh Milk 🥛" data-category="Dairy">Fresh Milk 🥛</option>
+                        <option value="Low Fat Milk 🥛" data-category="Dairy">Low Fat Milk 🥛</option>
+                        <option value="Organic Milk 🥛" data-category="Dairy">Organic Milk 🥛</option>
+                        <option value="Yogurt Plain 🍶" data-category="Dairy">Yogurt Plain 🍶</option>
+                        <option value="Greek Yogurt 🍶" data-category="Dairy">Greek Yogurt 🍶</option>
+                        <option value="Strawberry Yogurt 🍓" data-category="Dairy">Strawberry Yogurt 🍓</option>
+                        <option value="Blueberry Yogurt 🫐" data-category="Dairy">Blueberry Yogurt 🫐</option>
+                        <option value="Cheddar Cheese 🧀" data-category="Dairy">Cheddar Cheese 🧀</option>
+                        <option value="Mozzarella 🧀" data-category="Dairy">Mozzarella 🧀</option>
+                        <option value="Gouda Cheese 🧀" data-category="Dairy">Gouda Cheese 🧀</option>
+                        <option value="Cream Cheese 🧀" data-category="Dairy">Cream Cheese 🧀</option>
+                        <option value="Butter 🧈" data-category="Dairy">Butter 🧈</option>
+                        <option value="Whipping Cream 🥛" data-category="Dairy">Whipping Cream 🥛</option>
+                        <option value="Sour Cream 🥛" data-category="Dairy">Sour Cream 🥛</option>
+                        <!-- Frozen Products -->
+                        <option value="Vanilla Ice Cream 🍨" data-category="Frozen">Vanilla Ice Cream 🍨</option>
+                        <option value="Chocolate Ice Cream 🍨" data-category="Frozen">Chocolate Ice Cream 🍨</option>
+                        <option value="Strawberry Ice Cream 🍨" data-category="Frozen">Strawberry Ice Cream 🍨</option>
+                        <option value="Ice Cream Cake 🍰" data-category="Frozen">Ice Cream Cake 🍰</option>
+                        <option value="Frozen Pizza 🍕" data-category="Frozen">Frozen Pizza 🍕</option>
+                        <option value="Frozen Vegetables Mix ❄️" data-category="Frozen">Frozen Vegetables Mix ❄️
+                        </option>
+                        <option value="Frozen Peas 🟢" data-category="Frozen">Frozen Peas 🟢</option>
+                        <option value="Frozen Corn 🌽" data-category="Frozen">Frozen Corn 🌽</option>
+                        <option value="Frozen Fish Fillets 🐟" data-category="Frozen">Frozen Fish Fillets 🐟</option>
+                        <option value="Frozen Shrimp 🦐" data-category="Frozen">Frozen Shrimp 🦐</option>
+                        <option value="Ice Pops 🧊" data-category="Frozen">Ice Pops 🧊</option>
+                        <!-- Meat Products -->
+                        <option value="Fresh Chicken Breast 🍗" data-category="Meat">Fresh Chicken Breast 🍗</option>
+                        <option value="Whole Chicken 🍗" data-category="Meat">Whole Chicken 🍗</option>
+                        <option value="Ground Beef 🥩" data-category="Meat">Ground Beef 🥩</option>
+                        <option value="Beef Steak 🥩" data-category="Meat">Beef Steak 🥩</option>
+                        <option value="Pork Chops 🥩" data-category="Meat">Pork Chops 🥩</option>
+                        <option value="Bacon 🥓" data-category="Meat">Bacon 🥓</option>
+                        <option value="Fresh Salmon 🐟" data-category="Meat">Fresh Salmon 🐟</option>
+                        <option value="Turkey Breast 🦃" data-category="Meat">Turkey Breast 🦃</option>
+                        <option value="Lamb Chops 🍖" data-category="Meat">Lamb Chops 🍖</option>
+                        <!-- Ready-to-Eat -->
+                        <option value="Sandwich 🥪" data-category="ReadyMeals">Sandwich 🥪</option>
+                        <option value="Pasta Salad 🥗" data-category="ReadyMeals">Pasta Salad 🥗</option>
+                        <option value="Chicken Salad 🥗" data-category="ReadyMeals">Chicken Salad 🥗</option>
+                        <!-- Beverages -->
+                        <option value="Fresh Orange Juice 🍊" data-category="Beverages">Fresh Orange Juice 🍊</option>
+                        <option value="Apple Juice 🍎" data-category="Beverages">Apple Juice 🍎</option>
+                        <option value="Smoothie 🥤" data-category="Beverages">Smoothie 🥤</option>
+                        <!-- Fruits -->
+                        <option value="Fresh Berries 🫐" data-category="Fruits">Fresh Berries 🫐</option>
+                        <option value="Fresh Grapes 🍇" data-category="Fruits">Fresh Grapes 🍇</option>
+                        <option value="Cut Watermelon 🍉" data-category="Fruits">Cut Watermelon 🍉</option>
+                        <option value="Fruit Salad 🍎" data-category="Fruits">Fruit Salad 🍎</option>
+                        <!-- Seafood -->
+                        <optgroup label="Seafood">
+                            <option value="Fresh Tuna 🐟" data-category="Seafood">Fresh Tuna 🐟</option>
+                            <option value="Raw Shrimp 🦐" data-category="Seafood">Raw Shrimp 🦐</option>
+                            <option value="Crab Meat 🦀" data-category="Seafood">Crab Meat 🦀</option>
+                            <option value="Lobster Tail 🦞" data-category="Seafood">Lobster Tail 🦞</option>
+                        </optgroup>
+                        <!-- Bakery -->
+                        <optgroup label="Bakery">
+                            <option value="Fresh Bread 🍞" data-category="Bakery">Fresh Bread 🍞</option>
+                            <option value="Croissant 🥐" data-category="Bakery">Croissant 🥐</option>
+                            <option value="Muffins 🧁" data-category="Bakery">Muffins 🧁</option>
+                        </optgroup>
+                    </select>
+                    <select id="category" required style="padding: 10px; font-size: 16px;" disabled>
+                        <option value="">Select Category</option>
+                        <option value="Dairy">Dairy Products 🥛</option>
+                        <option value="Frozen">Frozen Foods ❄️</option>
+                        <option value="Meat">Fresh Meat 🥩</option>
+                        <option value="Seafood">Seafood 🐟</option>
+                        <option value="ReadyMeals">Ready-to-Eat Meals 🍱</option>
+                        <option value="Deli">Deli Items 🥪</option>
+                        <option value="Beverages">Cold Beverages 🥤</option>
+                        <option value="Desserts">Desserts 🍨</option>
+                        <option value="FreshProduce">Fresh Produce 🥬</option>
+                        <option value="PreparedFood">Prepared Foods 🥘</option>
+                    </select>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="quantity" placeholder="Quantity" min="1" required
+                            style="flex: 1; padding: 10px; font-size: 16px;">
+                        <select id="unit" required style="flex: 1; padding: 10px; font-size: 16px;">
+                            <option value="Number">Number</option>
+                            <option value="Kilogram">Kilogram (kg)</option>
+                            <option value="Gram">Gram (g)</option>
+                            <option value="Packets">Packets</option>
+                            <option value="Litres">Litres (L)</option>
+                            <option value="Millilitre">Millilitre (ml)</option>
+                            <option value="Dozen">Dozen</option>
+                            <option value="Box">Box</option>
+                            <option value="Tray">Tray</option>
+                            <option value="Bottle">Bottle</option>
+                            <option value="Can">Can</option>
+                            <option value="Jar">Jar</option>
+                            <option value="Tub">Tub</option>
+                            <option value="Slice">Slice</option>
+                            <option value="Piece">Piece</option>
+                            <option value="Bunch">Bunch</option>
+                            <option value="Bag">Bag</option>
+                            <option value="Cup">Cup</option>
+                            <option value="Bar">Bar</option>
+                            <option value="Roll">Roll</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Pouch">Pouch</option>
+                        </select>
+                    </div>
+                    <label for="expiry" style="font-size: 16px; margin-top: 5px;">Expiry Date</label>
+                    <input type="date" id="expiry" required style="padding: 10px; font-size: 16px;">
+                    <button id="add-product-btn"
+                        style="padding: 10px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        <i class="fas fa-plus-circle"></i> Add Product
+                    </button>
+                    <p id="error-message" style="color: red; font-size: 14px; margin-top: 10px;"></p>
+                </form>
+
+                <div id="productList">
+                    <h3>Product List</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Barcode</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Expiry</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <style>
+        #message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        #message.success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        #message.error {
+            background: #f44336;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-check,
+        .btn-sell {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-check {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .btn-sell {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .expiring-soon {
+            background-color: #fff3cd;
+        }
+    </style>
+</body>
+
+</html>

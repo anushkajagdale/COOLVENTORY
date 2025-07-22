@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History - Coolventory</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sales-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .sales-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .sales-table th {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .sales-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .sales-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .no-sales {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .sales-counts {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 24px;
+            font-size: 1.1em;
+        }
+
+        .sales-counts-box {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            margin-bottom: 28px;
+            padding: 18px 0;
+            background: #222;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .count-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 24px;
+        }
+
+        .count-label {
+            font-size: 1.05em;
+            color: #ffc107;
+            margin-bottom: 6px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .count-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+            background: #ffc107;
+            border-radius: 8px;
+            padding: 4px 18px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .count-item.sold .count-value {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .count-item.expired .count-value {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        .count-item.remaining .count-value {
+            background: #ffc107;
+            color: #222;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header style="background: black;">
+            <img src="coolventory.png" alt="Coolventory Logo" class="logo">
+            <h1>Sales History</h1>
+        </header>
+
+        <nav class="menu">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="manageprod.html"><i class="fas fa-box"></i> Manage Products</a>
+            <a href="sales.html"><i class="fas fa-chart-bar"></i> Sales</a>
+            <a href="expiryalerts.html"><i class="fas fa-exclamation-triangle"></i> Expiry Alerts</a>
+            <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span
+                    id="loginText">Login</span></a>
+        </nav>
+
+        <main class="main-content">
+            <!-- Product counts summary box -->
+            <div id="productCounts" class="sales-counts-box">
+                <div class="count-item sold">
+                    <span class="count-label">Total Sold</span>
+                    <span class="count-value" id="totalSold">0</span>
+                </div>
+                <div class="count-item expired">
+                    <span class="count-label">Expired Products</span>
+                    <span class="count-value" id="totalExpired">0</span>
+                </div>
+                <div class="count-item remaining">
+                    <span class="count-label">Remaining Products</span>
+                    <span class="count-value" id="totalRemaining">0</span>
+                </div>
+            </div>
+
+            <!-- Pie chart for sales by category -->
+            <div style="max-width:480px; margin:0 auto 32px;">
+                <canvas id="salesPieChart"></canvas>
+            </div>
+
+            <div class="sales-container">
+                <div id="sales-list">
+                    <table class="sales-table" id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Barcode</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Sale Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTableBody">
+                            <!-- Sales data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadSales();
+            updateLoginButton();
+            loadProductCounts();
+        });
+
+        async function loadSales() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/sales', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch sales');
+
+                const data = await response.json();
+                const tbody = document.getElementById('salesTableBody');
+
+                if (data.success && data.sales && data.sales.length > 0) {
+                    tbody.innerHTML = data.sales.map(sale => `
+                        <tr>
+                            <td>${sale.product_name || sale.name || ''}</td>
+                            <td>${sale.barcode || ''}</td>
+                            <td>${sale.category || ''}</td>
+                            <td>${sale.quantity}</td>
+                            <td>${sale.unit || ''}</td>
+                            <td>${new Date(sale.sale_date).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="no-sales">No sales records found</td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading sales:', error);
+                document.getElementById('salesTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="no-sales">Error loading sales data</td>
+                    </tr>
+                `;
+            }
+        }
+
+        async function loadProductCounts() {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/products/counts', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('totalSold').textContent = data.counts.totalSold;
+                document.getElementById('totalExpired').textContent = data.counts.totalExpired;
+                document.getElementById('totalRemaining').textContent = data.counts.totalRemaining;
+            }
+        }
+
+        async function loadSalesTable() {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/sales', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                const tbody = document.getElementById('salesTableBody');
+                tbody.innerHTML = data.sales.map(sale => `
+                    <tr>
+                        <td>${sale.product_name || sale.name || ''}</td>
+                        <td>${sale.barcode || ''}</td>
+                        <td>${sale.category || ''}</td>
+                        <td>${sale.quantity}</td>
+                        <td>${sale.unit || ''}</td>
+                        <td>${new Date(sale.sale_date).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function loadSalesChart() {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/sales/analytics', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                const ctx = document.getElementById('salesPieChart').getContext('2d');
+                if (window.salesPieChart) window.salesPieChart.destroy();
+                window.salesPieChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.categoryData.labels,
+                        datasets: [{
+                            data: data.categoryData.values,
+                            backgroundColor: [
+                                '#ffc107', '#28a745', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#007bff'
+                            ]
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            title: {
+                                display: true,
+                                text: 'Sales by Category'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('authToken');
+            window.location.href = 'login.html';
+        }
+
+        function updateLoginButton() {
+            const loginText = document.getElementById('loginText');
+            loginText.textContent = localStorage.getItem('authToken') ? 'Logout' : 'Login';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProductCounts();
+            loadSalesTable();
+            loadSalesChart();
+        });
+    </script>
+</body>
+
+</html>

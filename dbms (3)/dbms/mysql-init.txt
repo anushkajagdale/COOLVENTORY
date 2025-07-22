@@ -1,0 +1,3 @@
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'password123';
+CREATE DATABASE IF NOT EXISTS coolventory;
+USE coolventory;

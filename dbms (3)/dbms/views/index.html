@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refrigeration Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <style>
+        header {
+            padding: 40px 20px;
+            background: black;
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: 'Audrey', sans-serif;
+            font-weight: 700;
+            color: #ffffff;
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 3em;
+        }
+
+        .menu {
+            padding: 20px;
+            background-color: #000000;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-box button {
+            background-color: #ff0000;
+            color: white;
+        }
+
+        .gallery img {
+            flex: 1 1 calc(25% - 10px);
+            max-width: calc(25% - 10px);
+            height: auto;
+        }
+
+        @media (max-width: 768px) {
+            .gallery img {
+                flex: 1 1 calc(50% - 10px);
+                max-width: calc(50% - 10px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery img {
+                flex: 1 1 calc(100% - 10px);
+                max-width: calc(100% - 10px);
+            }
+        }
+    </style>
+    <script src="script.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <img src="coolventory.png" alt="Coolventory Logo" class="logo">
+            <h1>COOLVENTORY</h1>
+        </header>
+
+        <nav class="menu">
+            <a href="#dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="manageprod.html"><i class="fas fa-box"></i> Manage Products</a>
+            <a href="expiryalerts.html"><i class="fas fa-exclamation-triangle"></i> Expiry Alerts</a>
+            <a href="sales.html"><i class="fas fa-chart-bar"></i> Sales</a>
+            <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            <a href="#" onclick="handleLogout()" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+
+        <main class="main-content">
+            <section id="photo-gallery" class="section">
+                <div class="gallery">
+                    <img src="cake.jpg" alt="Gallery Image 1">
+                    <img src="a58279029147b0ef9e3550a838bb9610.jpg" alt="Gallery Image 2">
+                    <img src="902f8366ea5330cfd8cd5ec22318771b.jpg" alt="Gallery Image 3">
+                    <img src="f64eff70ce35fd6248b22d87dcd10b35.jpg" alt="Gallery Image 4">
+                    <img src="icecream.jpg" alt="Gallery Image 5">
+                    <img src="31cc7efd3f10c82ec770667cd4304ff4.jpg" alt="Gallery Image 6">
+                    <img src="dairy.jpg" alt="Gallery Image 7">
+                    <img src="background.jpg" alt="Gallery Image 8">
+                </div>
+            </section>
+
+            <section id="dashboard" class="section">
+                <h2>Dashboard</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <h3>Total Products</h3>
+                        <p id="total-products">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Dairy</h3>
+                        <p id="dairy-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Frozen</h3>
+                        <p id="frozen-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Beverages</h3>
+                        <p id="beverages-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Vegetables</h3>
+                        <p id="vegetables-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Fruits</h3>
+                        <p id="fruits-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>Meat</h3>
+                        <p id="meat-count">0</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            updateDashboard();
+        });
+
+        function handleLogout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+
+</html>

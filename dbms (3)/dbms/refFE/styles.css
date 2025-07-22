@@ -1,0 +1,612 @@
+/* General Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background: url('food-background.jpg') no-repeat center center/cover;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    /* Adjust height to fit content */
+    overflow-y: auto;
+    /* Allow vertical scrolling */
+    color: black;
+    transition: background 0.3s ease-in-out;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Dark Mode Support */
+body.dark-mode {
+    background: #222;
+    color: white;
+}
+
+/* Container holding Header and Main Content */
+.container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+/* Header */
+header {
+    padding: 40px 20px;
+    background: black;
+    /* Change background to black */
+    text-align: center;
+    /* Align content to the center */
+    display: flex;
+    /* Use flexbox for alignment */
+    flex-direction: column;
+    /* Stack logo and title vertically */
+    align-items: center;
+    /* Center items horizontally */
+    gap: 10px;
+    /* Add spacing between logo and title */
+}
+
+header h1 {
+    font-family: 'Audrey', sans-serif;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px #070c0ecd;
+    /* Add white shadow to title */
+}
+
+/* Top Menu */
+.menu {
+    width: 100vw;
+    /* Make the menu bar span the full viewport width */
+    margin: 0;
+    /* Remove any margin */
+    padding: 20px;
+    background-color: #000000;
+    /* Black color */
+    text-align: center;
+}
+
+.menu a {
+    color: white;
+    /* White text */
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 100 10px;
+    border-radius: 5px;
+    transition: background 0.3s;
+    display: inline-block;
+    /* Ensure links are inline */
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+.menu a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark Mode Button */
+.dark-mode-toggle {
+    cursor: pointer;
+    background: #444;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+.dark-mode-toggle:hover {
+    background: #666;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 40px;
+    overflow: visible;
+    /* Ensure content is fully visible */
+    background: transparent;
+    border-radius: 10px;
+    margin: 20px auto;
+    /* Center the content */
+    transition: background 0.3s ease-in-out;
+    max-width: 100%;
+    /* Full-width layout for sales page */
+    height: auto;
+    /* Allow content to expand */
+}
+
+body.dark-mode .main-content {
+    background: rgba(30, 30, 30, 0.8);
+}
+
+/* Sections */
+.section {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+}
+
+.section:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .section {
+    background: rgba(50, 50, 50, 0.8);
+}
+
+/* Dashboard Stats */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+    /* Increase margin */
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+    overflow-x: auto;
+    /* Allow horizontal scrolling */
+    width: 100%;
+    /* Fit all items in one row */
+}
+
+.stat-box {
+    flex: 0 0 200px;
+    /* Increase width */
+    padding: 20px;
+    /* Increase padding */
+    background: rgba(54, 138, 240, 0.8);
+    color: white;
+    text-align: center;
+    font-size: 18px;
+    /* Increase font size */
+    border-radius: 5px;
+    /* Reduce border radius */
+    transition: 0.3s;
+    height: 250px;
+    /* Increase height */
+    margin: 10px 0;
+    /* Reduce margin */
+}
+
+.stat-box:hover {
+    background: rgb(231, 6, 28);
+}
+
+/* Product Management Table */
+#product-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-top: 15px;
+}
+
+#product-table th,
+#product-table td {
+    display: table-cell;
+    /* Ensure proper table cell layout */
+    width: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    color: black;
+}
+
+body.dark-mode #product-table th,
+body.dark-mode #product-table td {
+    color: white;
+    border: 1px solid #555;
+}
+
+#product-table th {
+    background: rgba(0, 123, 255, 0.8);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#product-table th:hover {
+    background: rgba(0, 123, 255, 1);
+}
+
+#product-table tr {
+    display: table-row;
+    /* Ensure one product per row */
+}
+
+#product-table tr:hover {
+    background: rgba(220, 220, 220, 0.8);
+}
+
+/* Form for Adding Products */
+.form {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.form input,
+.form select {
+    padding: 8px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.form select {
+    background: white;
+    cursor: pointer;
+}
+
+.form button {
+    padding: 8px 15px;
+    background: rgba(40, 167, 69, 0.8);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.form button:hover {
+    background: rgb(229, 9, 9);
+}
+
+/* Search Bar */
+.search-bar {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.search-bar input {
+    padding: 8px;
+    width: 50%;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+}
+
+/* Expiry Alerts Highlight */
+#product-table tr.expired {
+    background: rgba(255, 179, 179, 0.8) !important;
+}
+
+/* Profile Section */
+.profile-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.profile-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-image img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-details {
+    text-align: left;
+}
+
+.profile-details p {
+    margin: 10px 0;
+}
+
+.profile-details button {
+    padding: 10px 20px;
+    background: rgba(40, 167, 69, 0.8);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.profile-details button:hover {
+    background: rgba(40, 167, 69, 1);
+}
+
+/* Logo Style */
+.logo {
+    width: 50px;
+    /* Smaller size for the logo */
+    height: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .menu {
+        flex-direction: column;
+    }
+
+    .form {
+        flex-direction: column;
+    }
+
+    .search-bar input {
+        width: 80%;
+    }
+
+    .stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .profile-container {
+        flex-direction: column;
+    }
+}
+
+/* Photo Gallery */
+.gallery {
+    display: flex;
+    /* Use flexbox for a flexible layout */
+    flex-wrap: wrap;
+    /* Allow wrapping of images */
+    gap: 10px;
+    /* Maintain spacing between images */
+    justify-content: center;
+    /* Center the images */
+    align-items: stretch;
+    /* Stretch images to fill available space */
+    margin-top: 10px;
+}
+
+.gallery img {
+    flex: 1 1 calc(25% - 10px);
+    /* Ensure images take up 25% of the row with spacing */
+    max-width: calc(25% - 10px);
+    /* Prevent images from exceeding their allocated space */
+    height: auto;
+    /* Maintain aspect ratio */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out;
+    object-fit: cover;
+    /* Ensure images fill their allocated space */
+}
+
+@media (max-width: 768px) {
+    .gallery img {
+        flex: 1 1 calc(50% - 10px);
+        /* Adjust to two images per row on smaller screens */
+        max-width: calc(50% - 10px);
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery img {
+        flex: 1 1 calc(100% - 10px);
+        /* Adjust to one image per row on very small screens */
+        max-width: calc(100% - 10px);
+    }
+}
+
+/* Chart Styling */
+canvas {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Sales Page Layout */
+#sales-overview {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+}
+
+.chart-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 40px;
+}
+
+.chart-container {
+    flex: 1;
+    max-width: 45%;
+    /* Adjusted for smaller layout */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    /* White box background */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Add shadow for better visibility */
+    padding: 20px;
+}
+
+#sales-table {
+    width: 100%;
+    margin-top: 40px;
+    border-collapse: collapse;
+}
+
+#sales-table th,
+#sales-table td {
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+#sales-table th {
+    background-color: #333;
+    color: white;
+}
+
+/* Login Styles */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: transparent;
+}
+
+.login-box {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px;
+    backdrop-filter: blur(10px);
+}
+
+.login-box h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+#login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#login-form input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+#login-form button {
+    background: #007bff;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#login-form button:hover {
+    background: #0056b3;
+}
+
+/* Status Messages */
+.status-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    padding-right: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+/* Page Transition */
+.page-transition {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.loading .page-transition {
+    opacity: 1;
+    pointer-events: all;
+}

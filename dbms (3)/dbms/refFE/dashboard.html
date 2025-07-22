@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard - Inventory Management</title>
+    <style>
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .urgent {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-stats" id="dashboard-stats"></div>
+
+    <script>
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById('dashboard-stats').innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.total_products}</div>
+                            <div class="stat-label">Total Products</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value ${stats.expiring_soon_count > 0 ? 'urgent' : ''}">${stats.expiring_soon_count}</div>
+                            <div class="stat-label">Products Expiring Soon</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.expired_count}</div>
+                            <div class="stat-label">Expired Products</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.total_sales}</div>
+                            <div class="stat-label">Total Sales</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+
+</html>

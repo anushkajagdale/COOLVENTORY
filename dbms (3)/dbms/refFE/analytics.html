@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sales Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            margin: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .expired {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stats-grid" id="stats-container"></div>
+
+    <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+    <script>
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayStats(data.stats);
+                    createSalesChart(data.stats.daily_sales);
+                    createCategoryChart(JSON.parse(data.stats.category_stats));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayStats(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total_units_sold || 0}</div>
+                    <div class="stat-label">Total Units Sold</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.unique_products_sold || 0}</div>
+                    <div class="stat-label">Unique Products Sold</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value expired">${stats.total_expired || 0}</div>
+                    <div class="stat-label">Expired Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.soon_expiring || 0}</div>
+                    <div class="stat-label">Products Expiring Soon</div>
+                </div>
+            `;
+        }
+
+        function createSalesChart(dailySales) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dailySales.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Units Sold',
+                        data: dailySales.map(d => d.units_sold),
+                        borderColor: '#2ecc71',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Daily Sales (Last 7 Days)'
+                    }
+                }
+            });
+        }
+
+        function createCategoryChart(categoryStats) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categoryStats.map(c => c.category),
+                    datasets: [{
+                        label: 'Products by Category',
+                        data: categoryStats.map(c => c.quantity),
+                        backgroundColor: '#3498db'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Inventory by Category'
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+    </script>
+</body>
+
+</html>
