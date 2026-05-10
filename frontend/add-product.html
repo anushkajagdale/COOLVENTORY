@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Product</title>
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input,
+        button,
+        select {
+            padding: 8px;
+            width: 100%;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+
+<body>
+    <nav class="menu">
+        <a href="index.html"><i class="fas fa-home"></i> Home</a>
+        <a href="manageprod.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="expiryalerts.html"><i class="fas fa-exclamation-triangle"></i> Expiry Alerts</a>
+        <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+        <a href="sales.html"><i class="fas fa-chart-bar"></i> Sales</a>
+        <a href="javascript:void(0)" onclick="redirectToLogin()"><i class="fas fa-sign-in-alt"></i> Login</a>
+    </nav>
+
+    <h2>Add New Product</h2>
+    <div id="success-message" style="color: green; display: none;"></div>
+    <div id="error-message" style="color: red;"></div>
+
+    <div class="form-group">
+        <input type="text" id="barcode" placeholder="Barcode (required)" required>
+    </div>
+    <div class="form-group">
+        <input type="text" id="name" placeholder="Product Name (required)" required>
+    </div>
+    <div class="form-group">
+        <select id="category" required>
+            <option value="">Select Category</option>
+            <option value="Dairy">Dairy</option>
+            <option value="Frozen">Frozen</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Fruits">Fruits</option>
+            <option value="Meat">Meat</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <input type="number" id="quantity" placeholder="Quantity (required)" min="1" required>
+    </div>
+    <div class="form-group">
+        <select id="unit" required>
+            <option value="">Select Unit</option>
+            <option value="Number">Number</option>
+            <option value="Kilogram">Kilogram (kg)</option>
+            <option value="Gram">Gram (g)</option>
+            <option value="Packets">Packets</option>
+            <option value="Litres">Litres (L)</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <input type="date" id="expiry" required>
+        <label for="expiry">Expiry Date (required)</label>
+    </div>
+    <button onclick="addProduct()">Add Product</button>
+
+    <script>
+        // Add expiry date validation
+        document.getElementById('expiry').addEventListener('change', function () {
+            const expiryDate = new Date(this.value);
+            const today = new Date();
+
+            if (expiryDate <= today) {
+                document.getElementById('error-message').textContent = 'Warning: Product is already expired!';
+            } else {
+                document.getElementById('error-message').textContent = '';
+            }
+        });
+
+        async function addProduct() {
+            try {
+                const formData = {
+                    barcode: document.getElementById('barcode').value,
+                    name: document.getElementById('name').value,
+                    category: document.getElementById('category').value,
+                    quantity: parseInt(document.getElementById('quantity').value),
+                    unit: document.getElementById('unit').value,
+                    expiry: document.getElementById('expiry').value
+                };
+
+                // Add debug log
+                console.log('Sending data:', formData);
+
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (result.success) {
+                    // Show success message
+                    const msg = document.getElementById('success-message');
+                    msg.textContent = 'Product added successfully!';
+                    msg.style.cssText = `
+                        display: block;
+                        background-color: #28a745;
+                        color: white;
+                        padding: 15px;
+                        border-radius: 5px;
+                        text-align: center;
+                        margin-bottom: 20px;
+                    `;
+
+                    // Clear form
+                    ['barcode', 'name', 'category', 'quantity', 'unit', 'expiry']
+                        .forEach(id => document.getElementById(id).value = '');
+
+                    // Hide message and redirect after 2 seconds
+                    setTimeout(() => {
+                        msg.style.display = 'none';
+                        window.location.href = '/manageprod.html';
+                    }, 2000);
+                } else {
+                    throw new Error(result.message || 'Failed to add product');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>
